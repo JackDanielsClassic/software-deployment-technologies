@@ -39,6 +39,14 @@ app.get('/health/ready', async (req, res) => {
     }
 });
 
+const sendResponse = (req, res, data, htmlBuilder) => {
+    const format = req.accepts(['json', 'html']);
+    if (format === 'html') {
+        res.type('text/html').send(htmlBuilder(data));
+    } else {
+        res.json(data);
+    }
+};
 
 app.get('/', (req, res) => {
     const acceptsHTML = req.accepts('text/html');
@@ -59,9 +67,76 @@ app.get('/', (req, res) => {
     }
 });
 
-// TODO: Реалізувати GET /notes
-// TODO: Реалізувати POST /notes
-// TODO: Реалізувати GET /notes/:id
+app.get('/notes', async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const rows = await conn.query('SELECT id, title FROM notes');
+
+        sendResponse(req, res, rows, (data) => {
+            let tableRows = data.map(n => `<tr><td>${n.id}</td><td>${n.title}</td></tr>`).join('');
+            return `<table border="1"><tr><th>ID</th><th>Title</th></tr>${tableRows}</table>`;
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error retrieving notes');
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+app.post('/notes', async (req, res) => {
+    const { title, content } = req.body;
+    if (!title || !content) {
+        return res.status(400).send('Title and content are required');
+    }
+
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query('INSERT INTO notes (title, content) VALUES (?, ?)', [title, content]);
+
+        const newNote = { id: Number(result.insertId), title, content };
+
+        sendResponse(req, res, newNote, (data) => {
+            return `<h2>Note created successfully!</h2><p>ID: ${data.id}</p><p>Title: ${data.title}</p>`;
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error creating note');
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+app.get('/notes/:id', async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const rows = await conn.query('SELECT id, title, content, created_at FROM notes WHERE id = ?', [req.params.id]);
+
+        if (rows.length === 0) {
+            return res.status(404).send('Note not found');
+        }
+
+        const note = rows[0];
+
+        sendResponse(req, res, note, (data) => {
+            return `
+                <table border="1">
+                    <tr><th>ID</th><td>${data.id}</td></tr>
+                    <tr><th>Title</th><td>${data.title}</td></tr>
+                    <tr><th>Created At</th><td>${data.created_at}</td></tr>
+                    <tr><th>Content</th><td>${data.content}</td></tr>
+                </table>`;
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error retrieving note');
+    } finally {
+        if (conn) conn.release();
+    }
+});
 
 
 app.listen(PORT, '127.0.0.1', () => {
