@@ -99,15 +99,19 @@ chown -R app:app /opt/mywebapp
 
 cd - > /dev/null
 
-if [ -f "deploy/mywebapp.service" ]; then
+if [ -f "deploy/mywebapp.service" ] && [ -f "deploy/mywebapp.socket" ]; then
     cp deploy/mywebapp.service /etc/systemd/system/
+    cp deploy/mywebapp.socket /etc/systemd/system/
 
     systemctl daemon-reload
-    systemctl enable mywebapp
-    systemctl start mywebapp
-    echo "Сервіс mywebapp успішно налаштовано та запущено."
+    systemctl disable mywebapp.service 2>/dev/null || true
+    systemctl stop mywebapp.service 2>/dev/null || true
+    systemctl enable mywebapp.socket
+    systemctl start mywebapp.socket
+
+    echo "Сервіс mywebapp успішно налаштовано (через Socket Activation)."
 else
-    echo "Помилка: Файл deploy/mywebapp.service не знайдено!"
+    echo "Помилка: Файли deploy/mywebapp.service або deploy/mywebapp.socket не знайдено!"
 fi
 
 echo "[4/6] Етап розгортання застосунку завершено!"

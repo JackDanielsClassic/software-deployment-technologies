@@ -1,20 +1,11 @@
 [Unit]
-Description=Notes Service Web Application
-
-After=network.target mariadb.service
-Requires=mariadb.service
+Description=My Web App Service
+Requires=mywebapp.socket
+After=network.target
 
 [Service]
 Type=simple
 User=app
+Group=app
 WorkingDirectory=/opt/mywebapp
-
-ExecStartPre=/usr/bin/mysql -u app_user -pAppSecretPass123 notes_db -e "SOURCE /opt/mywebapp/init.sql"
-
-ExecStart=/usr/bin/node server.js --port=3000 --db-host=127.0.0.1 --db-user=app_user --db-pass=AppSecretPass123 --db-name=notes_db
-
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
+ExecStart=/usr/bin/node /opt/mywebapp/server.js --port=3000 --db-user=app_user --db-pass=AppSecretPass123

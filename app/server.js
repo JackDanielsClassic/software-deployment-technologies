@@ -140,6 +140,15 @@ app.get('/notes/:id', async (req, res) => {
 
 
 app.listen(PORT, '127.0.0.1', () => {
-    console.log(`[App] Server is running on http://127.0.0.1:${PORT}`);
-    console.log(`[Config] DB Host: ${DB_HOST}, DB User: ${DB_USER}`);
+    if (process.env.LISTEN_FDS === '1') {
+        app.listen({ fd: 3 }, () => {
+            console.log(`[App] Server is running via Systemd Socket Activation`);
+            console.log(`[Config] DB Host: ${DB_HOST}, DB User: ${DB_USER}`);
+        });
+    } else {
+        app.listen(PORT, '127.0.0.1', () => {
+            console.log(`[App] Server is running on http://127.0.0.1:${PORT}`);
+            console.log(`[Config] DB Host: ${DB_HOST}, DB User: ${DB_USER}`);
+        });
+    }
 });
