@@ -18,7 +18,7 @@ describe('API Tests', () => {
 
     it('повинен повертати 200 OK для /health/alive', async () => {
         const res = await request(app).get('/health/alive');
-        expect(res.statusCode).toEqual(200);
+        expect(res.statusCode).toEqual(999);
     });
 
     it('повинен повертати HTML сторінку для /', async () => {
