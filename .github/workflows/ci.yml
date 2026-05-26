@@ -84,3 +84,24 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+        needs: build-and-push
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        runs-on: self-hosted
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
+
+          - name: Deploy to Target Node
+            run: |
+              scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@192.168.56.102:~/app/
+              scp -o StrictHostKeyChecking=no -r db ubuntu@192.168.56.102:~/app/ || true
+              scp -o StrictHostKeyChecking=no -r deploy ubuntu@192.168.56.102:~/app/ || true
+              
+              ssh -o StrictHostKeyChecking=no ubuntu@192.168.56.102 << 'EOF'
+                cd ~/app
+              
+                docker compose down
+                docker compose up -d --build
+              EOF
