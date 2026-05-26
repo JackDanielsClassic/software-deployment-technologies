@@ -96,9 +96,10 @@ jobs:
           - name: Deploy to Target Node
             run: |
               scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@192.168.56.102:~/app/
+              scp -o StrictHostKeyChecking=no -r app ubuntu@192.168.56.102:~/app/
               scp -o StrictHostKeyChecking=no -r db ubuntu@192.168.56.102:~/app/ || true
               scp -o StrictHostKeyChecking=no -r deploy ubuntu@192.168.56.102:~/app/ || true
-              
+          
               ssh -o StrictHostKeyChecking=no ubuntu@192.168.56.102 << 'EOF'
                 cd ~/app
               
