@@ -106,3 +106,7 @@ jobs:
                 docker compose down
                 docker compose up -d --build
               EOF
+          - name: Verify Deployment
+            run: |
+                sleep 5 
+                curl -f http://192.168.56.102/health
