@@ -109,5 +109,5 @@ jobs:
 
           - name: Verify Deployment
             run: |
-                sleep 5 
+                sleep 20 
                 curl -f http://192.168.56.102/notes
