@@ -1,0 +1,79 @@
+---
+- name: Встановлення Node.js та npm
+  apt:
+    name:
+      - nodejs
+      - npm
+    state: present
+
+- name: Створення системного користувача app (без домашньої папки та логіну)
+  user:
+    name: app
+    system: yes
+    create_home: no
+    shell: /usr/sbin/nologin
+
+- name: Створення користувача operator для керування системою
+  user:
+    name: operator
+    password: "$6$rounds=656000$saltsaltsaltsalt$M6V08W7W7M25m.f7GZ/rZ8WpE9y96Psd89u79B8Fz4gR1NOn9UoMv1uXREvREvREvREvREvREvREvREvREvRE."
+    shell: /bin/bash
+    create_home: yes
+
+- name: Налаштування обмеженого sudo для користувача operator
+  template:
+    src: operator_sudoers.j2
+    dest: /etc/sudoers.d/operator
+    validate: '/usr/sbin/visudo -cf %s'
+    mode: '0440'
+
+- name: Створення директорії для застосунку
+  file:
+    path: /opt/app
+    state: directory
+    owner: app
+    group: app
+    mode: '0755'
+
+- name: Генерація файлу server.js застосунку
+  copy:
+    dest: /opt/app/server.js
+    content: |
+      const http = require('http');
+      const server = http.createServer((req, res) => {
+        if (req.url === '/health/alive') {
+          res.writeHead(200, {'Content-Type': 'text/plain'});
+          res.end('OK');
+        } else if (req.url === '/health/ready') {
+          // Ендпоінт успішно віддає статус готовності
+          res.writeHead(200, {'Content-Type': 'text/plain'});
+          res.end('READY');
+        } else {
+          res.writeHead(200, {'Content-Type': 'text/plain'});
+          res.end('Hello from KPI Worker Node!');
+        }
+      });
+      server.listen(3000, '127.0.0.1');
+    owner: app
+    group: app
+
+- name: Генерація динамічного конфігу застосунку з IP бази даних
+  template:
+    src: config.json.j2
+    dest: /opt/app/config.json
+    owner: app
+    group: app
+    mode: '0644'
+
+- name: Створення та активація системної служби systemd для застосунку
+  template:
+    src: app.service.j2
+    dest: /etc/systemd/system/app.service
+  notify: Перезапуск застосунку
+
+- name: Запуск служби застосунку
+  systemd:
+    name: app
+    state: started
+    enabled: yes
+    daemon_reload: yes

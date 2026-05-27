@@ -1,0 +1,53 @@
+---
+- name: Встановлення MariaDB та залежностей для Ansible
+  apt:
+    name:
+      - mariadb-server
+      - python3-pymysql
+    state: present
+
+- name: Налаштування мережі MariaDB через шаблон
+  template:
+    src: network.cnf.j2
+    dest: /etc/mysql/conf.d/network.cnf
+    mode: '0644'
+  notify: Перезапуск MariaDB
+
+- name: Запуск та увімкнення служби MariaDB у системі
+  systemd:
+    name: mariadb
+    state: started
+    enabled: yes
+
+- name: Створення бази даних для нашого застосунку
+  mysql_db:
+    name: app_db
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Створення користувача БД з доступом ТІЛЬКИ з VM1 (worker)
+  mysql_user:
+    name: app_user
+    password: "SuperSecurePassword123"
+    priv: "app_db.*:ALL"
+    host: "192.168.122.193"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Дозволяємо підключення до MariaDB (3306) ТІЛЬКИ з VM1 (worker)
+  ufw:
+    rule: allow
+    proto: tcp
+    src: "192.168.122.193"
+    port: "3306"
+
+- name: Дозволяємо SSH, щоб Ansible не втратив зв'язок
+  ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+
+- name: Вмикаємо фаєрвол UFW і блокуємо все інше ззовні
+  ufw:
+    state: enabled
+    policy: deny

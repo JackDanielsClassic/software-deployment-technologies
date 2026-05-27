@@ -1,0 +1,26 @@
+---
+- name: Оновлення кешу apt
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Створення користувача teacher
+  user:
+    name: teacher
+    password: "$6$rounds=656000$saltsaltsaltsalt$M6V08W7W7M25m.f7GZ/rZ8WpE9y96Psd89u79B8Fz4gR1NOn9UoMv1uXREvREvREvREvREvREvREvREvREvRE."
+    groups: sudo
+    append: yes
+    shell: /bin/bash
+    create_home: yes
+
+- name: Створення директорії для оцінок
+  file:
+    path: /home/student
+    state: directory
+    mode: '0755'
+
+- name: Створення файлу gradebook із номером варіанту
+  copy:
+    dest: /home/student/gradebook
+    content: "12\n"
+    mode: '0644'

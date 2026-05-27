@@ -145,3 +145,10 @@ vite.config.ts.timestamp-*
 #.iml files
 .idea/
 *.iml
+
+lab4/terraform/.terraform/
+lab4/terraform/*.img
+lab4/terraform/*.qcow2
+lab4/terraform/*.iso
+lab4/terraform/terraform.tfstate*
+lab4/terraform/.terraform.lock.hcl

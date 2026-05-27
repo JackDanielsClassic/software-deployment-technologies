@@ -1,0 +1,19 @@
+---
+- name: Базове налаштування усіх серверів
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Налаштування сервера бази даних (VM2)
+  hosts: db
+  become: true
+  roles:
+    - database
+
+- name: Налаштування сервера застосунку (VM1)
+  hosts: workers
+  become: true
+  roles:
+    - app
+    - proxy
